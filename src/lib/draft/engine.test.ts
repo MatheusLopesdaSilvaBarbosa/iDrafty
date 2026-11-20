@@ -66,8 +66,8 @@ describe("draft recommendation engine", () => {
     expect(new Set(BRAWLERS.map((b) => b.name.toLowerCase())).size).toBe(109);
   });
 
-  it("contains exactly the 26 updated Ranked maps across the six supplied modes", () => {
-    expect(MAPS).toHaveLength(26);
+  it("contains the updated Ranked maps across the six supplied modes", () => {
+    expect(MAPS).toHaveLength(28);
     expect(
       MODES.map((mode) => [mode.name, MAPS.filter((map) => map.mode === mode.id).length]),
     ).toEqual([
@@ -83,6 +83,7 @@ describe("draft recommendation engine", () => {
       "Gem Fort",
       "Hard Rock Mine",
       "Undermine",
+      "Crystal Arcade",
       "Bridge Too Far",
       "Hot Potato",
       "Kaboom Canyon",
@@ -95,6 +96,7 @@ describe("draft recommendation engine", () => {
       "Pinball Dreams",
       "Sneaky Fields",
       "Triple Dribble",
+      "Beach Ball",
       "Dueling Beetles",
       "Open Business",
       "Parallel Plays",
@@ -298,6 +300,28 @@ describe("draft recommendation engine", () => {
       expect(getMatchupGuideEntry(assassin.id)?.hardCounters).toContain("starr-nova");
     }
     expect(getMatchupGuideEntry("starr-nova")?.hardCounters).not.toContain("starr-nova");
+  });
+
+  it("lists standard launcher counters as regular counters to Ziggy", () => {
+    const launcherCounters = [
+      "darryl",
+      "edgar",
+      "fang",
+      "kenji",
+      "lily",
+      "melodie",
+      "mico",
+      "mortis",
+    ];
+
+    for (const counterId of launcherCounters) {
+      expect(getMatchupGuideEntry("ziggy")?.counteredBy).toContain(counterId);
+      expect(getMatchupGuideEntry("ziggy")?.hardCounters).not.toContain(counterId);
+      expect(getGuideMatchup(ds, "ziggy", counterId)).toMatchObject({
+        score: -2,
+        known: true,
+      });
+    }
   });
 
   it("lists Wendy only as a regular counter, not as a hard counter", () => {

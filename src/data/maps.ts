@@ -80,6 +80,7 @@ export const MAPS: GameMap[] = [
     "Área central disputada",
     "Arbustos e paredes",
   ]),
+  map("crystal_arcade", "Crystal Arcade", "gem_grab", 2, 2, 2, ["Corredores com cobertura", "Disputa pelo controle central"]),
   // Roubo — Heist
   map("bridge_too_far", "Bridge Too Far", "heist", 1, 1, 3, [
     "Linhas de visão longas",
@@ -128,6 +129,7 @@ export const MAPS: GameMap[] = [
     "Corredores de ataque",
     "Paredes perto do gol",
   ]),
+  map("beach_ball", "Beach Ball", "brawl_ball", 2, 2, 2, ["Rotas laterais", "Cobertura distribuída"]),
   // Zona Estratégica — Hot Zone
   map("dueling_beetles", "Dueling Beetles", "hot_zone", 3, 1, 1, [
     "Muitas paredes",
