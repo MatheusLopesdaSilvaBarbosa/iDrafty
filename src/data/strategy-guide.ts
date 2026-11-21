@@ -1023,7 +1023,7 @@ export const GUIDE_BY_BRAWLER_ID: Record<string, GuideEntry> = {
     meta: false,
     subMeta: false,
     counteredBy: ["colette", "colt", "gray", "sirius"],
-    hardCounters: ["shade", "stu", "darryl"],
+    hardCounters: ["darryl"],
     synergies: ["gene", "max", "coronel-ruffs"],
     bestModes: ["hot_zone"],
     maps: ["kaboom_canyon"],
@@ -2935,6 +2935,37 @@ const LAST_PICK_LAUNCHERS = new Set([
   "berry",
   "squeak",
 ]);
+
+/** Map-specific recommendations maintained with the strategy guide. */
+export const GUIDE_MAP_BRAWLER_TIERS: Record<
+  string,
+  Record<string, "neutral" | "best" | "worst">
+> = {
+  crystal_arcade: {
+    "wattson-surge": "best",
+    vince: "best",
+    "coronel-ruffs": "best",
+    chester: "best",
+    gale: "best",
+    "mister-p": "best",
+  },
+  beach_ball: {
+    vince: "best",
+    "wattson-surge": "best",
+    "mister-p": "best",
+    stu: "best",
+    gale: "best",
+    lumi: "best",
+  },
+  ring_of_fire: {
+    barley: "neutral",
+    dynamike: "neutral",
+    grom: "neutral",
+    "larry-lawrie": "neutral",
+    cosmo: "best",
+    vince: "best",
+  },
+};
 
 export function getGuideEntry(id: string): GuideEntry | undefined {
   return GUIDE_BY_BRAWLER_ID[id];

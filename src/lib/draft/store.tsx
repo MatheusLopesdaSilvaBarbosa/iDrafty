@@ -10,7 +10,11 @@ import {
 import { BRAWLERS } from "@/data/brawlers";
 import { MAPS, MODES } from "@/data/maps";
 import { SYNERGIES } from "@/data/matchups";
-import { getGuideEntry, getMatchupGuideEntry } from "@/data/strategy-guide";
+import {
+  getGuideEntry,
+  getMatchupGuideEntry,
+  GUIDE_MAP_BRAWLER_TIERS,
+} from "@/data/strategy-guide";
 import { guideMatchupKey } from "./types";
 import type {
   Brawler,
@@ -472,7 +476,10 @@ export function getDefaultMapBrawlers(mapId: string): string[] {
   const guideBrawlers = BRAWLERS.filter(
     (brawler) => brawler.available !== false && getGuideEntry(brawler.id)?.maps.includes(mapId),
   ).map((brawler) => brawler.id);
-  return [...new Set([...map.goodBrawlers, ...guideBrawlers])].filter(
+  const configuredBrawlers = Object.entries(GUIDE_MAP_BRAWLER_TIERS[mapId] ?? {})
+    .filter(([, tier]) => tier === "best")
+    .map(([id]) => id);
+  return [...new Set([...map.goodBrawlers, ...guideBrawlers, ...configuredBrawlers])].filter(
     (id) => BRAWLERS.find((brawler) => brawler.id === id)?.available !== false,
   );
 }
@@ -482,6 +489,8 @@ function getDefaultMapBrawlerTier(
   brawlerId: string,
   mapBrawlers?: string[],
 ): MapBrawlerTier {
+  const configuredTier = GUIDE_MAP_BRAWLER_TIERS[mapId]?.[brawlerId];
+  if (configuredTier) return configuredTier;
   if ((mapBrawlers ?? getDefaultMapBrawlers(mapId)).includes(brawlerId)) return "best";
   if (getGuideEntry(brawlerId)?.worstMaps.includes(mapId)) return "worst";
   return "neutral";
@@ -532,7 +541,10 @@ export function buildDataset(
   return {
     brawlers,
     maps: MAPS.map((map) => {
-      const mapTiers = customMapBrawlerTiers[map.id] ?? {};
+      const mapTiers = {
+        ...GUIDE_MAP_BRAWLER_TIERS[map.id],
+        ...customMapBrawlerTiers[map.id],
+      };
       const goodBrawlers = new Set(customMapBrawlers[map.id] ?? getDefaultMapBrawlers(map.id));
       Object.entries(mapTiers).forEach(([brawlerId, tier]) => {
         if (tier === "best") goodBrawlers.add(brawlerId);
