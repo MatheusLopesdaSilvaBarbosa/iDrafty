@@ -95,6 +95,10 @@ export const MAPS: GameMap[] = [
     "Cobertura central",
   ]),
   map("safe_zone", "Safe Zone", "heist", 2, 1, 3, ["Rotas laterais para o cofre", "Áreas abertas"]),
+  map("pit_stop", "Pit Stop", "heist", 2, 3, 1, [
+    "Muitos arbustos",
+    "Rotas curtas até o cofre",
+  ]),
   // Caça-Estrelas — Bounty
   map("dry_season", "Dry Season", "bounty", 2, 1, 3, [
     "Linhas de visão longas",

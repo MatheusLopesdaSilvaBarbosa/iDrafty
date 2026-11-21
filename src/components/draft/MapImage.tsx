@@ -15,6 +15,7 @@ const MAP_IMAGES: Record<string, string> = {
   "Crystal Arcade": "https://cdn.brawlify.com/maps/regular/15000008.png",
   "Bridge Too Far": "https://cdn.brawlify.com/maps/regular/15000072.png",
   "Hot Potato": "https://cdn.brawlify.com/maps/regular/15000053.png",
+  "Pit Stop": "https://cdn.brawlify.com/maps/regular/15000137.png",
   "Kaboom Canyon": "https://cdn.brawlify.com/maps/regular/15000018.png",
   "Safe Zone": "https://cdn.brawlify.com/maps/regular/15000019.png",
   "Dry Season": "https://cdn.brawlify.com/maps/regular/15000083.png",

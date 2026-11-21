@@ -655,19 +655,31 @@ const extraUi: Record<string, string> = {
 };
 
 const extraData: Record<string, string> = {
-  // Nomes oficiais dos mapas em português brasileiro.
+  // Nomes dos mapas em português brasileiro; Pit Stop mantém o nome original.
+  "Duplo Redemoinho": "Double Swoosh",
   "Mina Rochosa": "Hard Rock Mine",
   "Forte de Gemas": "Gem Fort",
   "Fliperama de Cristal": "Crystal Arcade",
+  "Mina Subterrânea": "Undermine",
+  "Ponte Distante": "Bridge Too Far",
+  "Batata Quente": "Hot Potato",
   "Drible Triplo": "Triple Dribble",
   "Tiro de Meta": "Pinhole Punt",
   "Pintando o Pinball": "Pinball Dreams",
   "Pit Stop": "Pit Stop",
   "Zona Segura": "Safe Zone",
   "Cânion Kaboom": "Kaboom Canyon",
+  "Estrela Cadente": "Shooting Star",
+  "Centro do Palco": "Center Stage",
+  "Campos Furtivos": "Sneaky Fields",
+  "Bola de Praia": "Beach Ball",
   "Anel de Fogo": "Ring of Fire",
   Aberto: "Open Business",
   "Besouros Brigões": "Dueling Beetles",
+  "Jogadas Paralelas": "Parallel Plays",
+  "Rocha da Belle": "Belle's Rock",
+  "Fênix Flamejante": "Flaring Phoenix",
+  "Nascentes Correntes": "Flowing Springs",
   "Estação Seca": "Dry Season",
   Tocaia: "Hideout",
   "Bolo em Camadas": "Layer Cake",
