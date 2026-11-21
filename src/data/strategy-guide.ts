@@ -275,7 +275,6 @@ export const GUIDE_BY_BRAWLER_ID: Record<string, GuideEntry> = {
       "safe_zone",
       "kaboom_canyon",
       "shooting_star",
-      "ring_of_fire",
       "out_in_the_open",
     ],
     warning:
@@ -609,7 +608,7 @@ export const GUIDE_BY_BRAWLER_ID: Record<string, GuideEntry> = {
     hardCounters: ["", ""],
     synergies: ["gene", "max", "gus"],
     bestModes: ["gem_grab", "brawl_ball", "hot_zone"],
-    maps: [""],
+    maps: ["crystal_arcade"],
     worstMaps: [],
     warning:
       "Sem alerta geral de last pick por arquétipo; ainda assim, confira o mapa, o modo e as respostas disponíveis no draft inimigo.",
@@ -735,7 +734,7 @@ export const GUIDE_BY_BRAWLER_ID: Record<string, GuideEntry> = {
     hardCounters: ["squeak", "barley", "dynamike", "grom", "larry-lawrie", "juju"],
     synergies: ["bibi", "frank", "rosa"],
     bestModes: [""],
-    maps: [""],
+    maps: ["ring_of_fire"],
     worstMaps: [],
     warning:
       "Sem alerta geral de last pick por arquétipo; ainda assim, confira o mapa, o modo e as respostas disponíveis no draft inimigo.",
@@ -877,7 +876,6 @@ export const GUIDE_BY_BRAWLER_ID: Record<string, GuideEntry> = {
       "safe_zone",
       "kaboom_canyon",
       "shooting_star",
-      "ring_of_fire",
       "out_in_the_open",
     ],
     warning:
@@ -1091,8 +1089,10 @@ export const GUIDE_BY_BRAWLER_ID: Record<string, GuideEntry> = {
       "gem_fort",
       "hard_rock_mine",
       "undermine",
+      "crystal_arcade",
       "center_stage",
       "pinball_dreams",
+      "beach_ball",
       "sneaky_fields",
       "triple_dribble",
       "dueling_beetles",
@@ -1263,7 +1263,6 @@ export const GUIDE_BY_BRAWLER_ID: Record<string, GuideEntry> = {
       "safe_zone",
       "kaboom_canyon",
       "shooting_star",
-      "ring_of_fire",
       "out_in_the_open",
     ],
     warning: "ATENÇÃO: lançador que pode sofrer contra inimigos móveis e pressão de longo alcance.",
@@ -1625,6 +1624,7 @@ export const GUIDE_BY_BRAWLER_ID: Record<string, GuideEntry> = {
       "triple_dribble",
       "dueling_beetles",
       "open_business",
+      "beach_ball",
       "parallel_plays",
       "ring_of_fire",
     ],
@@ -1954,12 +1954,14 @@ export const GUIDE_BY_BRAWLER_ID: Record<string, GuideEntry> = {
       "gem_fort",
       "hard_rock_mine",
       "undermine",
+      "crystal_arcade",
       "dry_season",
       "hideout",
       "layer_cake",
       "shooting_star",
       "center_stage",
       "pinball_dreams",
+      "beach_ball",
       "sneaky_fields",
       "triple_dribble",
       "dueling_beetles",
@@ -2444,7 +2446,7 @@ export const GUIDE_BY_BRAWLER_ID: Record<string, GuideEntry> = {
     hardCounters: ["shade"],
     synergies: ["buster", "frank", "rosa"],
     bestModes: ["gem_grab"],
-    maps: ["hard_rock_mine"],
+    maps: ["hard_rock_mine", "crystal_arcade"],
     worstMaps: [],
     warning:
       "Sem alerta geral de last pick por arquétipo; ainda assim, confira o mapa, o modo e as respostas disponíveis no draft inimigo.",
@@ -2713,6 +2715,7 @@ export const GUIDE_BY_BRAWLER_ID: Record<string, GuideEntry> = {
       "hard_rock_mine",
       "center_stage",
       "pinball_dreams",
+      "beach_ball",
       "sneaky_fields",
       "triple_dribble",
       "dueling_beetles",
@@ -2752,9 +2755,11 @@ export const GUIDE_BY_BRAWLER_ID: Record<string, GuideEntry> = {
       "gem_fort",
       "hard_rock_mine",
       "undermine",
+      "crystal_arcade",
       "layer_cake",
       "center_stage",
       "pinball_dreams",
+      "beach_ball",
       "sneaky_fields",
       "triple_dribble",
       "dueling_beetles",
@@ -2849,7 +2854,7 @@ export const GUIDE_BY_BRAWLER_ID: Record<string, GuideEntry> = {
     hardCounters: ["lily", "melodie", "edgar"],
     synergies: ["gene", "max", "gus"],
     bestModes: ["gem_grab", "brawl_ball", "hot_zone", "bounty", "knockout"],
-    maps: [""],
+    maps: ["crystal_arcade", "beach_ball", "ring_of_fire"],
     worstMaps: [],
     warning:
       "Sem alerta geral de last pick por arquétipo; ainda assim, confira o mapa, o modo e as respostas disponíveis no draft inimigo.",
@@ -2935,37 +2940,6 @@ const LAST_PICK_LAUNCHERS = new Set([
   "berry",
   "squeak",
 ]);
-
-/** Map-specific recommendations maintained with the strategy guide. */
-export const GUIDE_MAP_BRAWLER_TIERS: Record<
-  string,
-  Record<string, "neutral" | "best" | "worst">
-> = {
-  crystal_arcade: {
-    "wattson-surge": "best",
-    vince: "best",
-    "coronel-ruffs": "best",
-    chester: "best",
-    gale: "best",
-    "mister-p": "best",
-  },
-  beach_ball: {
-    vince: "best",
-    "wattson-surge": "best",
-    "mister-p": "best",
-    stu: "best",
-    gale: "best",
-    lumi: "best",
-  },
-  ring_of_fire: {
-    barley: "neutral",
-    dynamike: "neutral",
-    grom: "neutral",
-    "larry-lawrie": "neutral",
-    cosmo: "best",
-    vince: "best",
-  },
-};
 
 export function getGuideEntry(id: string): GuideEntry | undefined {
   return GUIDE_BY_BRAWLER_ID[id];
