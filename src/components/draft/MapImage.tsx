@@ -24,6 +24,7 @@ const MAP_IMAGES: Record<string, string> = {
   "Center Stage": "https://cdn.brawlify.com/maps/regular/15000132.png",
   "Pinball Dreams":
     "https://static.wikia.nocookie.net/brawlstars/images/e/e9/Pinball_Dreams-Map.png/revision/latest?cb=20251112135209",
+  "Pinhole Punt": "https://cdn.brawlify.com/maps/regular/15000026.png",
   "Sneaky Fields": "https://cdn.brawlify.com/maps/regular/15000050.png",
   "Triple Dribble": "https://cdn.brawlify.com/maps/regular/15000025.png",
   "Beach Ball": "https://cdn.brawlify.com/maps/regular/15000143.png",

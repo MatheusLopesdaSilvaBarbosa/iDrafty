@@ -655,6 +655,25 @@ const extraUi: Record<string, string> = {
 };
 
 const extraData: Record<string, string> = {
+  // Nomes oficiais dos mapas em português brasileiro.
+  "Mina Rochosa": "Hard Rock Mine",
+  "Forte de Gemas": "Gem Fort",
+  "Fliperama de Cristal": "Crystal Arcade",
+  "Drible Triplo": "Triple Dribble",
+  "Tiro de Meta": "Pinhole Punt",
+  "Pintando o Pinball": "Pinball Dreams",
+  "Pit Stop": "Pit Stop",
+  "Zona Segura": "Safe Zone",
+  "Cânion Kaboom": "Kaboom Canyon",
+  "Anel de Fogo": "Ring of Fire",
+  Aberto: "Open Business",
+  "Besouros Brigões": "Dueling Beetles",
+  "Estação Seca": "Dry Season",
+  Tocaia: "Hideout",
+  "Bolo em Camadas": "Layer Cake",
+  "Caverna do Braço Dourado": "Goldarm Gulch",
+  "Novos Horizontes": "New Horizons",
+  Descampado: "Out in the Open",
   Corvo: "Crow",
   Eugênio: "Gene",
   "8-BIT": "8-Bit",

@@ -121,6 +121,10 @@ export const MAPS: GameMap[] = [
     "Paredes que alteram as rotas",
     "Corredores de avanço",
   ]),
+  map("pinhole_punt", "Pinhole Punt", "brawl_ball", 2, 1, 3, [
+    "Corredores estreitos de ataque",
+    "Linhas de visão longas",
+  ]),
   map("sneaky_fields", "Sneaky Fields", "brawl_ball", 2, 3, 1, [
     "Muitos arbustos",
     "Aproximação protegida",
