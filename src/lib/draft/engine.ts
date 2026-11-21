@@ -160,12 +160,15 @@ export function modeFit(br: Brawler, mode?: ModeId | null) {
 
 export function mapFit(br: Brawler, map?: GameMap | null) {
   if (!map) return { value: 0.5, known: false, specific: false };
-  const highlightedMaps = getGuideEntry(br.id)?.maps;
-  if (!highlightedMaps?.length) return { value: 0.5, known: false, specific: false };
+  const tier = map.brawlerTiers?.[br.id];
+  const recommended = tier
+    ? tier === "best"
+    : getGuideEntry(br.id)?.maps.includes(map.id) ?? false;
+  const known = tier !== undefined || Boolean(getGuideEntry(br.id)?.maps.length);
   return {
-    value: highlightedMaps.includes(map.id) ? 1 : 0.4,
-    known: true,
-    specific: highlightedMaps.includes(map.id),
+    value: recommended ? 1 : known ? 0.4 : 0.5,
+    known,
+    specific: recommended,
   };
 }
 
@@ -323,12 +326,13 @@ export function scoreCandidate(
     strategicReasons.push("Suporte à equipe");
     strategicPositives.push("Suporte à equipe");
   }
-  if (map && guide?.maps.includes(map.id)) {
+  const mapTier = map?.brawlerTiers?.[id];
+  if (map && (mapTier ? mapTier === "best" : guide?.maps.includes(map.id))) {
     strategicPoints += GUIDE_SCORING_RULES.mapHighlight;
     strategicReasons.push(`Destaque no mapa ${map.name}`);
     strategicPositives.push(`Destaque no mapa ${map.name}`);
   }
-  if (map && guide?.worstMaps.includes(map.id)) {
+  if (map && (mapTier ? mapTier === "worst" : guide?.worstMaps.includes(map.id))) {
     strategicPoints += GUIDE_SCORING_RULES.worstMap;
     strategicReasons.push(`Mapa desfavorável: ${map.name}`);
     strategicRisks.push(`Mapa desfavorável: ${map.name}`);

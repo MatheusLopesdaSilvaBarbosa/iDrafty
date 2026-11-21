@@ -46,6 +46,8 @@ export interface GameMap {
   imageUrl?: string;
   /** Brawlers believed to perform well here. Empty when no reliable data. */
   goodBrawlers: string[];
+  /** Effective per-map ratings after guide defaults and local edits are applied. */
+  brawlerTiers?: Record<string, "neutral" | "best" | "worst">;
   status: DataStatus;
 }
 

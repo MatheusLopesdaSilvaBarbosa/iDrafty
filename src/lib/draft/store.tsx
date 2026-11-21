@@ -541,7 +541,17 @@ export function buildDataset(
         if (tier === "best") goodBrawlers.add(brawlerId);
         else goodBrawlers.delete(brawlerId);
       });
-      return { ...map, goodBrawlers: [...goodBrawlers] };
+      const brawlerTiers = Object.fromEntries(
+        BRAWLERS.filter((brawler) => brawler.available !== false).map((brawler) => {
+          const tier = mapTiers[brawler.id];
+          if (tier) return [brawler.id, tier];
+          if (goodBrawlers.has(brawler.id)) return [brawler.id, "best"];
+          if (getGuideEntry(brawler.id)?.worstMaps.includes(map.id))
+            return [brawler.id, "worst"];
+          return [brawler.id, "neutral"];
+        }),
+      ) as Record<string, MapBrawlerTier>;
+      return { ...map, goodBrawlers: [...goodBrawlers], brawlerTiers };
     }),
     modes: MODES,
     synergies: SYNERGIES,
