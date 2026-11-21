@@ -32,6 +32,8 @@ export interface Mode {
   imageUrl?: string;
   /** Roles that typically help with the mode objective (manual evaluation). */
   objectiveRoles: Role[];
+  /** Optional user-defined recommendations; undefined means use the strategy guide. */
+  recommendedBrawlers?: string[];
 }
 
 export interface GameMap {

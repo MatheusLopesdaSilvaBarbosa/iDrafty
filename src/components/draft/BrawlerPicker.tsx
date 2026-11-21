@@ -80,6 +80,10 @@ export function BrawlerPicker({
   const taken = new Set(picked(draft));
   const banned = new Set(bannedBrawlers);
   const map = ds.maps.find((m) => m.id === draft.mapId);
+  const bestMapBrawlerIds = new Set(map?.goodBrawlers ?? []);
+  const recommendedModeBrawlerIds = new Set(
+    ds.modes.find((mode) => mode.id === draft.mode)?.recommendedBrawlers ?? [],
+  );
   const brawlerName = (id: string) => {
     const brawler = ds.brawlers.find((b) => b.id === id);
     return brawler ? displayBrawlerName(brawler, locale) : id;
@@ -103,8 +107,8 @@ export function BrawlerPicker({
             if (!((metaOnly && b.meta) || (subMetaOnly && b.subMeta))) return false;
           }
           const guide = getGuideEntry(b.id);
-          if (modeFitOnly && (!draft.mode || !guide?.bestModes?.includes(draft.mode))) return false;
-          if (mapFitOnly && (!map || !guide?.maps.includes(map.id))) return false;
+          if (modeFitOnly && (!draft.mode || !recommendedModeBrawlerIds.has(b.id))) return false;
+          if (mapFitOnly && (!map || !bestMapBrawlerIds.has(b.id))) return false;
           return true;
         })
         .sort(
@@ -123,6 +127,7 @@ export function BrawlerPicker({
       subMetaOnly,
       draft.mode,
       map,
+      ds.modes,
       locale,
     ],
   );

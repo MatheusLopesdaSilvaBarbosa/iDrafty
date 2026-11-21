@@ -60,7 +60,7 @@ const hideCompositionHoverRisks = (items: string[]) =>
 
 function Composition() {
   const { locale } = useLocale();
-  const { ds, draft } = useDraft();
+  const { ds, draft, bannedBrawlers } = useDraft();
   const hasAllies = draft.allies.some(Boolean);
   const compositionScores = useMemo(
     () => ({
@@ -83,7 +83,7 @@ function Composition() {
         return [
           {
             brawler,
-            result: scoreCandidate(ds, id, teamDraft, undefined, undefined, false),
+            result: scoreCandidate(ds, id, teamDraft, undefined, undefined, false, bannedBrawlers),
           },
         ];
       });
@@ -93,7 +93,7 @@ function Composition() {
       allies: calculateTeamScores(draft.allies, draft.enemies),
       enemies: calculateTeamScores(draft.enemies, draft.allies),
     };
-  }, [ds, draft]);
+  }, [ds, draft, bannedBrawlers]);
 
   return (
     <div className="space-y-5">

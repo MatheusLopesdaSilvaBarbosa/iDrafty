@@ -40,6 +40,12 @@ export function I18nProvider({ children }: { children: ReactNode }) {
           ? ([brawler.name, brawler.imageAlias ?? brawler.name] as const)
           : ([brawler.imageAlias ?? brawler.name, brawler.name] as const),
       ),
+      ...(["Dano", "Tanque", "Atirador", "Assassino", "Suporte", "Controle", "Artilharia"] as Role[]).map(
+        (role) =>
+          locale === "en"
+            ? ([role, english[role] ?? role] as const)
+            : ([english[role] ?? role, role] as const),
+      ),
       ...MODES.map((mode) =>
         locale === "en"
           ? ([mode.name, MODE_NAMES[mode.id]] as const)
@@ -159,7 +165,16 @@ export function displayDataStatus(status: DataStatus, locale: Locale) {
 }
 
 const extraEn: Record<string, string> = {
+  "Matchups contra a outra equipe": "Matchups against the opposing team",
+  "Adiciona a função ": "Adds the ",
+  " à equipe": " role to the team",
+  "Suporte à equipe": "Team support",
+  "Destaque no mapa ": "Featured on ",
+  "Countera ": "Counters ",
+  "É counterado por ": "Countered by ",
   "Tier estratégico": "Strategic tier",
+  "Filtrar por resultado": "Filter by result",
+  "Todos os resultados": "All results",
   "É counterado por:": "Countered by:",
   "É hard counter de:": "Hard counters:",
   "Mapas desfavoráveis:": "Unfavorable maps:",

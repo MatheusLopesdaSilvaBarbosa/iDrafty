@@ -10,10 +10,7 @@ import {
 import { BRAWLERS } from "@/data/brawlers";
 import { MAPS, MODES } from "@/data/maps";
 import { SYNERGIES } from "@/data/matchups";
-import {
-  getGuideEntry,
-  getMatchupGuideEntry,
-} from "@/data/strategy-guide";
+import { getGuideEntry, getMatchupGuideEntry } from "@/data/strategy-guide";
 import { guideMatchupKey } from "./types";
 import type {
   Brawler,
@@ -521,6 +518,7 @@ export function buildDataset(
   customMapBrawlers: CustomMapBrawlers = {},
   customBrawlerTiers: CustomBrawlerTiers = {},
   customMapBrawlerTiers: CustomMapBrawlerTiers = {},
+  customModeBrawlers: CustomModeBrawlers = {},
 ): Dataset {
   const brawlers = BRAWLERS.map((brawler) => {
     const notes = customBrawlerNotes[brawler.id];
@@ -542,18 +540,26 @@ export function buildDataset(
         else goodBrawlers.delete(brawlerId);
       });
       const brawlerTiers = Object.fromEntries(
-        BRAWLERS.filter((brawler) => brawler.available !== false).map((brawler) => {
-          const tier = mapTiers[brawler.id];
-          if (tier) return [brawler.id, tier];
-          if (goodBrawlers.has(brawler.id)) return [brawler.id, "best"];
-          if (getGuideEntry(brawler.id)?.worstMaps.includes(map.id))
-            return [brawler.id, "worst"];
-          return [brawler.id, "neutral"];
-        }),
+        BRAWLERS.filter((brawler) => brawler.available !== false).flatMap(
+          (brawler): [string, MapBrawlerTier][] => {
+            const tier = mapTiers[brawler.id];
+            if (tier) return [[brawler.id, tier]];
+            if (goodBrawlers.has(brawler.id)) return [[brawler.id, "best"]];
+            if (getGuideEntry(brawler.id)?.worstMaps.includes(map.id))
+              return [[brawler.id, "worst"]];
+            if (getGuideEntry(brawler.id)?.maps.includes(map.id)) return [[brawler.id, "neutral"]];
+            return [];
+          },
+        ),
       ) as Record<string, MapBrawlerTier>;
       return { ...map, goodBrawlers: [...goodBrawlers], brawlerTiers };
     }),
-    modes: MODES,
+    modes: MODES.map((mode) => ({
+      ...mode,
+      recommendedBrawlers: Object.prototype.hasOwnProperty.call(customModeBrawlers, mode.id)
+        ? (customModeBrawlers[mode.id] ?? [])
+        : getDefaultModeBrawlers(mode.id),
+    })),
     synergies: SYNERGIES,
     disabledGuideMatchups: deletedGuideMatchups,
     matchups: custom,
@@ -869,6 +875,7 @@ export function DraftProvider({ children }: { children: ReactNode }) {
         customMapBrawlers,
         customBrawlerTiers,
         customMapBrawlerTiers,
+        customModeBrawlers,
       ),
       updateBrawlerNotes,
       setMapGoodBrawlers,

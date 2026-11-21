@@ -28,6 +28,7 @@ import {
   getGuideEntry,
   GUIDE_SCORING_RULES,
 } from "@/data/strategy-guide";
+import { predictCounters } from "./counterPrediction";
 
 export interface Weights {
   matchup: number;
@@ -151,8 +152,14 @@ export function getSynergy(ds: Dataset, a: string, b: string) {
     : { score: 0, known: false as const, entry: undefined };
 }
 
-export function modeFit(br: Brawler, mode?: ModeId | null) {
+export function modeFit(br: Brawler, mode?: ModeId | null, recommendedBrawlers?: string[]) {
   if (!mode) return { value: 0.5, known: false };
+  if (recommendedBrawlers !== undefined) {
+    return {
+      value: recommendedBrawlers.includes(br.id) ? 1 : 0.4,
+      known: true,
+    };
+  }
   const bestModes = getGuideEntry(br.id)?.bestModes;
   if (!bestModes?.length) return { value: 0.5, known: false };
   return { value: bestModes.includes(mode) ? 1 : 0.4, known: true };
@@ -163,13 +170,24 @@ export function mapFit(br: Brawler, map?: GameMap | null) {
   const tier = map.brawlerTiers?.[br.id];
   const recommended = tier
     ? tier === "best"
-    : getGuideEntry(br.id)?.maps.includes(map.id) ?? false;
-  const known = tier !== undefined || Boolean(getGuideEntry(br.id)?.maps.length);
+    : (getGuideEntry(br.id)?.maps.includes(map.id) ?? false);
+  const unfavorable = tier
+    ? tier === "worst"
+    : (getGuideEntry(br.id)?.worstMaps.includes(map.id) ?? false);
+  const guide = getGuideEntry(br.id);
+  const known =
+    tier !== undefined || Boolean(guide?.maps.length) || Boolean(guide?.worstMaps.includes(map.id));
   return {
-    value: recommended ? 1 : known ? 0.4 : 0.5,
+    value: recommended ? 1 : unfavorable ? 0.1 : known ? 0.4 : 0.5,
     known,
     specific: recommended,
   };
+}
+
+/** Effective best picks for a map, including edits made in the database tab. */
+export function getMapBestBrawlerIds(ds: Dataset, mapId?: string | null): string[] {
+  if (!mapId) return [];
+  return ds.maps.find((map) => map.id === mapId)?.goodBrawlers ?? [];
 }
 
 export const picked = (d: DraftState) =>
@@ -201,6 +219,8 @@ export interface CandidateResult {
   risks: string[];
   strategicPoints: number;
   strategicReasons: string[];
+  counterPredictionBonus: number;
+  counterPredictionThreats: ReturnType<typeof predictCounters>["threats"];
   warning: string | null;
 }
 
@@ -229,6 +249,7 @@ export function scoreCandidate(
   weights: Weights = DEFAULT_WEIGHTS,
   allySlot?: number,
   applyLastPickPenalty = true,
+  excludedIds: readonly string[] = [],
 ): CandidateResult {
   const br = ds.brawlers.find((x) => x.id === id)!;
   const byId = (x: string) => ds.brawlers.find((y) => y.id === x)!;
@@ -236,6 +257,10 @@ export function scoreCandidate(
   const map = ds.maps.find((m) => m.id === draft.mapId) ?? null;
   const enemies = draft.enemies.filter((x): x is string => !!x);
   const allies = draft.allies.filter((x, i): x is string => !!x && x !== id && i !== allySlot);
+  const counterPrediction =
+    enemies.length < 3
+      ? predictCounters(ds, id, allies, new Set([...picked(draft), ...excludedIds]))
+      : { bonus: 0, threats: [] };
 
   const mc = matchupComponent(ds, id, enemies, ctx);
 
@@ -243,7 +268,11 @@ export function scoreCandidate(
   const synergyAvg = mean(syn.map((s) => s.score));
   const synergy = allies.length ? norm3(synergyAvg) : 0.5;
 
-  const mf = modeFit(br, draft.mode);
+  const mf = modeFit(
+    br,
+    draft.mode,
+    ds.modes.find((mode) => mode.id === draft.mode)?.recommendedBrawlers,
+  );
   const mpf = mapFit(br, map);
   const fit = mean([mf.value, mpf.value]);
 
@@ -321,23 +350,36 @@ export function scoreCandidate(
     strategicReasons.push("✨ Sub-Meta");
     strategicPositives.push("✨ Sub-Meta");
   }
-  if (guide?.support) {
+  const teamAlreadyHasSupport = allies.some((allyId) => getGuideEntry(allyId)?.support);
+  if (guide?.support && !teamAlreadyHasSupport) {
     strategicPoints += GUIDE_SCORING_RULES.support;
     strategicReasons.push("Suporte à equipe");
     strategicPositives.push("Suporte à equipe");
   }
   const mapTier = map?.brawlerTiers?.[id];
-  if (map && (mapTier ? mapTier === "best" : guide?.maps.includes(map.id))) {
+  if (
+    map &&
+    (mapTier !== undefined ? mapTier === "best" : guide?.maps.includes(map.id))
+  ) {
     strategicPoints += GUIDE_SCORING_RULES.mapHighlight;
     strategicReasons.push(`Destaque no mapa ${map.name}`);
     strategicPositives.push(`Destaque no mapa ${map.name}`);
   }
-  if (map && (mapTier ? mapTier === "worst" : guide?.worstMaps.includes(map.id))) {
+  if (
+    map &&
+    (mapTier !== undefined ? mapTier === "worst" : guide?.worstMaps.includes(map.id))
+  ) {
     strategicPoints += GUIDE_SCORING_RULES.worstMap;
     strategicReasons.push(`Mapa desfavorável: ${map.name}`);
     strategicRisks.push(`Mapa desfavorável: ${map.name}`);
   }
-  if (draft.mode && guide?.bestModes?.includes(draft.mode)) {
+  const modeRecommendation = ds.modes.find((mode) => mode.id === draft.mode)?.recommendedBrawlers;
+  if (
+    draft.mode &&
+    (modeRecommendation === undefined
+      ? guide?.bestModes?.includes(draft.mode)
+      : modeRecommendation.includes(id))
+  ) {
     strategicPoints += 2;
     strategicReasons.push("Modo de destaque");
   }
@@ -386,7 +428,7 @@ export function scoreCandidate(
 
   return {
     id,
-    score: clamp(Math.round(total * 100) + strategicPoints, 0, 100),
+    score: clamp(Math.round(total * 100) + strategicPoints + counterPrediction.bonus, 0, 100),
     components,
     matchups: mc.cells,
     worst: mc.worst,
@@ -403,6 +445,8 @@ export function scoreCandidate(
     risks,
     strategicPoints,
     strategicReasons,
+    counterPredictionBonus: counterPrediction.bonus,
+    counterPredictionThreats: counterPrediction.threats,
     warning,
   };
 }
@@ -426,7 +470,7 @@ export function rankCandidates(
   }
   return ds.brawlers
     .filter((b) => b.available !== false && !taken.has(b.id))
-    .map((b) => scoreCandidate(ds, b.id, draft, opts.weights, opts.allySlot))
+    .map((b) => scoreCandidate(ds, b.id, draft, opts.weights, opts.allySlot, true, opts.excludeIds))
     .sort(
       (a, b) =>
         b.score - a.score ||
@@ -509,6 +553,7 @@ export function draftLimitations(
     !modeFit(
       ds.brawlers.find((brawler) => brawler.id === ranked[0]!.id)!,
       draft.mode,
+      ds.modes.find((mode) => mode.id === draft.mode)?.recommendedBrawlers,
     ).known
   )
     out.push({
@@ -566,7 +611,12 @@ export function analyzeComposition(
         issues.push(`${B(allies[i]!).name} + ${B(allies[j]!).name}: ${s.entry!.explanation}`);
     }
   const synergy = pairs.length ? norm3(mean(pairs)) : 0.5;
-  const fit = mean(team.map((b) => mean([modeFit(b, draft.mode).value, mapFit(b, map).value])));
+  const recommendedBrawlers = mode?.recommendedBrawlers;
+  const fit = mean(
+    team.map((b) =>
+      mean([modeFit(b, draft.mode, recommendedBrawlers).value, mapFit(b, map).value]),
+    ),
+  );
   const roles = new Set(team.map((b) => b.role));
   const ranges = new Set(team.map((b) => b.range));
   const coverage = clamp(

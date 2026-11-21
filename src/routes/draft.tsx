@@ -10,13 +10,18 @@ import {
   Undo2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { getGuideEntry } from "@/data/strategy-guide";
 import { Button } from "@/components/ui/button";
 import { MapModeBar, TeamPanel } from "@/components/draft/DraftBoard";
 import { CandidateCard } from "@/components/draft/CandidateCard";
 import { PageTutorial } from "@/components/draft/PageTutorial";
 import { DemoNotice, Portrait, ScoreRing } from "@/components/draft/ui-bits";
-import { analyzeComposition, draftLimitations, PATHS, rankCandidates } from "@/lib/draft/engine";
+import {
+  analyzeComposition,
+  draftLimitations,
+  getMapBestBrawlerIds,
+  PATHS,
+  rankCandidates,
+} from "@/lib/draft/engine";
 import { getNextPickTeam } from "@/lib/draft/store";
 import { useDraft } from "@/lib/draft/store";
 import { cn } from "@/lib/utils";
@@ -83,6 +88,9 @@ function DraftPage() {
     [ds, opponentDraft, bannedBrawlers],
   );
   const limits = draftLimitations(ds, draft, ranked);
+  const visibleLimits = limits.filter(
+    ({ text }) => !text.startsWith("Apenas ") && !text.startsWith("Confiança baixa:"),
+  );
   const paths = useMemo(
     () =>
       PATHS.map((p) => ({
@@ -96,13 +104,13 @@ function DraftPage() {
     [ds, draft, bannedBrawlers],
   );
   const banSuggestions = useMemo(
-    () =>
-      ds.brawlers.filter(
-        (brawler) =>
-          brawler.available !== false &&
-          getGuideEntry(brawler.id)?.maps.includes(draft.mapId ?? ""),
-      ),
-    [ds.brawlers, draft.mapId],
+    () => {
+      const bestBrawlerIds = new Set(getMapBestBrawlerIds(ds, draft.mapId));
+      return ds.brawlers.filter(
+        (brawler) => brawler.available !== false && bestBrawlerIds.has(brawler.id),
+      );
+    },
+    [ds, draft.mapId],
   );
   const name = (id: string) => ds.brawlers.find((b) => b.id === id)!;
   const selectCoin = (coin: "blue" | "red") => {
@@ -173,7 +181,7 @@ function DraftPage() {
           {
             title: "Entenda as sugestões",
             description:
-              "A lista é recalculada a cada turno. O ranking considera o modo e o mapa, confrontos contra os brawlers já escolhidos, sinergia e cobertura da equipe. Avisos e justificativas do card ajudam a entender vantagens, riscos e dados com menor confiança.",
+              "A lista é recalculada a cada turno. O ranking considera o modo e o mapa, confrontos contra os brawlers já escolhidos, sinergia e cobertura da equipe. Avisos e justificativas do card ajudam a entender vantagens e riscos.",
             target: "[data-tutorial='draft-recommendations']",
           },
           {
@@ -431,7 +439,7 @@ function DraftPage() {
                   (posição {slot + 1})
                 </span>
               </h2>
-              {limits.map((l) => (
+              {visibleLimits.map((l) => (
                 <p
                   key={l.text}
                   className={
@@ -447,21 +455,21 @@ function DraftPage() {
                 className={cn(
                   "grid animate-in fade-in duration-500 motion-reduce:animate-none gap-3",
                   showLaterRecommendations
-                    ? "slide-in-from-right-3 grid-cols-1 md:grid-cols-[2.5rem_repeat(3,minmax(0,1fr))]"
-                    : "slide-in-from-left-3 grid-cols-1 md:grid-cols-[repeat(3,minmax(0,1fr))_2.5rem]",
+                    ? "slide-in-from-right-3 grid-cols-1 md:grid-cols-[5.5rem_repeat(3,minmax(0,1fr))]"
+                    : "slide-in-from-left-3 grid-cols-1 md:grid-cols-[repeat(3,minmax(0,1fr))_5.5rem]",
                 )}
               >
                 {showLaterRecommendations && ranked.length > 3 && (
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
                     aria-label="Voltar às três primeiras recomendações"
-                    title="Voltar às três primeiras recomendações"
-                    className="mx-auto h-11 w-12 md:h-full md:w-auto md:min-h-12"
+                    className="group flex min-h-16 w-full items-center justify-center rounded-xl border-sky-300/30 bg-sky-300/[0.06] p-3 text-sky-200 shadow-sm transition-all hover:border-sky-300/60 hover:bg-sky-300/10 hover:text-sky-100 hover:shadow-md md:h-full md:min-h-[220px]"
                     onClick={() => setShowLaterRecommendations(false)}
                   >
-                    <ChevronLeft className="size-5" />
+                    <span className="flex size-12 items-center justify-center rounded-full bg-sky-300/10 transition-colors group-hover:bg-sky-300/20">
+                      <ChevronLeft className="size-6 transition-transform group-hover:-translate-x-0.5" />
+                    </span>
                   </Button>
                 )}
                 {ranked
@@ -484,13 +492,13 @@ function DraftPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
-                    aria-label="Ver recomendações até a quinta posição"
-                    title="Ver recomendações até a quinta posição"
-                    className="mx-auto h-11 w-12 md:h-full md:w-auto md:min-h-12"
+                    aria-label="Ver as recomendações de quarta e quinta posição"
+                    className="group flex min-h-16 w-full items-center justify-center rounded-xl border-sky-300/30 bg-sky-300/[0.06] p-3 text-sky-200 shadow-sm transition-all hover:border-sky-300/60 hover:bg-sky-300/10 hover:text-sky-100 hover:shadow-md md:h-full md:min-h-[220px]"
                     onClick={() => setShowLaterRecommendations(true)}
                   >
-                    <ChevronRight className="size-5" />
+                    <span className="flex size-12 items-center justify-center rounded-full bg-sky-300/10 transition-colors group-hover:bg-sky-300/20">
+                      <ChevronRight className="size-6 transition-transform group-hover:translate-x-0.5" />
+                    </span>
                   </Button>
                 )}
               </div>
@@ -546,21 +554,21 @@ function DraftPage() {
                 className={cn(
                   "grid animate-in fade-in duration-500 motion-reduce:animate-none gap-3",
                   showLaterRecommendations
-                    ? "slide-in-from-right-3 grid-cols-1 md:grid-cols-[2.5rem_repeat(3,minmax(0,1fr))]"
-                    : "slide-in-from-left-3 grid-cols-1 md:grid-cols-[repeat(3,minmax(0,1fr))_2.5rem]",
+                    ? "slide-in-from-right-3 grid-cols-1 md:grid-cols-[5.5rem_repeat(3,minmax(0,1fr))]"
+                    : "slide-in-from-left-3 grid-cols-1 md:grid-cols-[repeat(3,minmax(0,1fr))_5.5rem]",
                 )}
               >
                 {showLaterRecommendations && opponentRanked.length > 3 && (
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
                     aria-label="Voltar às três primeiras sugestões para o adversário"
-                    title="Voltar às três primeiras sugestões"
-                    className="mx-auto h-11 w-12 md:h-full md:w-auto md:min-h-12"
+                    className="group flex min-h-16 w-full items-center justify-center rounded-xl border-sky-300/30 bg-sky-300/[0.06] p-3 text-sky-200 shadow-sm transition-all hover:border-sky-300/60 hover:bg-sky-300/10 hover:text-sky-100 hover:shadow-md md:h-full md:min-h-[220px]"
                     onClick={() => setShowLaterRecommendations(false)}
                   >
-                    <ChevronLeft className="size-5" />
+                    <span className="flex size-12 items-center justify-center rounded-full bg-sky-300/10 transition-colors group-hover:bg-sky-300/20">
+                      <ChevronLeft className="size-6 transition-transform group-hover:-translate-x-0.5" />
+                    </span>
                   </Button>
                 )}
                 {opponentRanked
@@ -584,13 +592,13 @@ function DraftPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
-                    aria-label="Ver sugestões para o adversário até a quinta posição"
-                    title="Ver até a quinta sugestão"
-                    className="mx-auto h-11 w-12 md:h-full md:w-auto md:min-h-12"
+                    aria-label="Ver as sugestões de quarta e quinta posição para o adversário"
+                    className="group flex min-h-16 w-full items-center justify-center rounded-xl border-sky-300/30 bg-sky-300/[0.06] p-3 text-sky-200 shadow-sm transition-all hover:border-sky-300/60 hover:bg-sky-300/10 hover:text-sky-100 hover:shadow-md md:h-full md:min-h-[220px]"
                     onClick={() => setShowLaterRecommendations(true)}
                   >
-                    <ChevronRight className="size-5" />
+                    <span className="flex size-12 items-center justify-center rounded-full bg-sky-300/10 transition-colors group-hover:bg-sky-300/20">
+                      <ChevronRight className="size-6 transition-transform group-hover:translate-x-0.5" />
+                    </span>
                   </Button>
                 )}
               </div>

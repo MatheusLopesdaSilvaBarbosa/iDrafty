@@ -148,6 +148,24 @@ export function CandidateCard({
           ))}
         </div>
       )}
+      {c.counterPredictionBonus > 0 && (
+        <div className="mt-3 rounded-md border border-sky-300/30 bg-sky-300/5 p-2 text-xs">
+          <p className="font-semibold text-sky-200">
+            {locale === "en" ? "Counter Prediction" : "Previsão de Counter"}: +
+            {c.counterPredictionBonus}
+          </p>
+          <ul className="mt-1 space-y-1">
+            {c.counterPredictionThreats.map((threat) => (
+              <li key={threat.id} className="text-foreground/90">
+                {locale === "en" ? "Counters " : "Countera "}
+                {name(threat.id)}
+                {locale === "en" ? ", a potential threat to " : ", uma ameaça potencial para "}
+                {threat.allyIds.map(name).join(", ")}.
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {showWarning && c.warning && (
         <div className="mt-2 rounded-md border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
           <p>⚠ {c.warning}</p>

@@ -14,6 +14,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -81,7 +90,6 @@ export const Route = createFileRoute("/banco")({
   component: Banco,
 });
 
-const sel = "h-9 w-full rounded-md border border-input bg-surface px-2 text-sm";
 const PAGE_SIZE = 25;
 const MATCHUP_SCORE_LABELS: Record<number, string> = {
   5: "Inimigo NÃO JOGA",
@@ -633,6 +641,9 @@ function Banco() {
   const [matchupScore, setMatchupScore] = useState(0);
   const [matchupExplanation, setMatchupExplanation] = useState("");
   const [brawlerFilter, setBrawlerFilter] = useState("all");
+  const [matchupAdvantageFilter, setMatchupAdvantageFilter] = useState<
+    "all" | "advantage" | "disadvantage"
+  >("all");
   const [customPage, setCustomPage] = useState(1);
   const [guidePage, setGuidePage] = useState(1);
   const [exportedRulesText, setExportedRulesText] = useState("");
@@ -686,9 +697,14 @@ function Banco() {
     return guideMatchups;
   }, [ds, custom]);
   const filterMatchups = (matchups: Matchup[]) =>
-    brawlerFilter === "all"
-      ? matchups
-      : matchups.filter((matchup) => matchup.attacker === brawlerFilter);
+    matchups.filter((matchup) => {
+      const matchesBrawler = brawlerFilter === "all" || matchup.attacker === brawlerFilter;
+      const matchesAdvantage =
+        matchupAdvantageFilter === "all" ||
+        (matchupAdvantageFilter === "advantage" && matchup.score > 0) ||
+        (matchupAdvantageFilter === "disadvantage" && matchup.score < 0);
+      return matchesBrawler && matchesAdvantage;
+    });
   const filteredCustom = filterMatchups(custom);
   const filteredGuide = filterMatchups(guideMatchups);
   const customPageCount = Math.max(1, Math.ceil(filteredCustom.length / PAGE_SIZE));
@@ -1463,18 +1479,24 @@ function Banco() {
                   />
                   <label className="space-y-1.5 text-xs">
                     Vantagem / Desvantagem (-5 a +5)
-                    <select
-                      className="h-16 w-full rounded-md border border-input bg-surface px-2 text-sm"
-                      value={f.score}
-                      onChange={(e) => setF({ ...f, score: Number(e.target.value) })}
+                    <Select
+                      value={String(f.score)}
+                      onValueChange={(value) =>
+                        setF((current) => ({ ...current, score: Number(value) }))
+                      }
                     >
-                      {[5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5].map((s) => (
-                        <option key={s} value={s}>
-                          {s > 0 ? `+${s} | ` : s < 0 ? `${s} | ` : "0 | "}
-                          {MATCHUP_SCORE_LABELS[s]}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="h-16 bg-surface">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5].map((score) => (
+                          <SelectItem key={score} value={String(score)}>
+                            {score > 0 ? `+${score} | ` : score < 0 ? `${score} | ` : "0 | "}
+                            {MATCHUP_SCORE_LABELS[score]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </label>
                   <div className="space-y-2 text-xs">
                     <span className="font-medium">Modos e mapas (opcional)</span>
@@ -1601,31 +1623,67 @@ function Banco() {
                       </div>
                       <label>
                         <span className="sr-only">Filtrar por Brawler</span>
-                        <select
-                          aria-label="Filtrar por Brawler"
-                          className={`${sel} w-auto min-w-44`}
+                        <Select
                           value={brawlerFilter}
-                          onChange={(event) => {
-                            setBrawlerFilter(event.target.value);
+                          onValueChange={(value) => {
+                            setBrawlerFilter(value);
                             setCustomPage(1);
                             setGuidePage(1);
                           }}
                         >
-                          <option value="all">Todos os Brawlers</option>
-                          {brawlersByRarity.map((group) => (
-                            <optgroup key={group.rarity} label={group.rarity}>
-                              {group.brawlers.map((brawler) => (
-                                <option
-                                  key={brawler.id}
-                                  value={brawler.id}
-                                  disabled={brawler.available === false}
-                                >
-                                  {brawler.name}
-                                </option>
-                              ))}
-                            </optgroup>
-                          ))}
-                        </select>
+                          <SelectTrigger
+                            aria-label="Filtrar por Brawler"
+                            className="w-auto min-w-44 bg-surface"
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Todos os Brawlers</SelectItem>
+                            {brawlersByRarity.map((group) => (
+                              <SelectGroup key={group.rarity}>
+                                <SelectLabel>{group.rarity}</SelectLabel>
+                                {group.brawlers.map((brawler) => (
+                                  <SelectItem
+                                    key={brawler.id}
+                                    value={brawler.id}
+                                    disabled={brawler.available === false}
+                                  >
+                                    {brawler.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </label>
+                      <label>
+                        <span className="sr-only">Filtrar por resultado</span>
+                        <Select
+                          value={matchupAdvantageFilter}
+                          onValueChange={(value) => {
+                            if (
+                              value !== "all" &&
+                              value !== "advantage" &&
+                              value !== "disadvantage"
+                            )
+                              return;
+                            setMatchupAdvantageFilter(value);
+                            setCustomPage(1);
+                            setGuidePage(1);
+                          }}
+                        >
+                          <SelectTrigger
+                            aria-label="Filtrar por resultado"
+                            className="w-auto min-w-44 bg-surface"
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Todos os resultados</SelectItem>
+                            <SelectItem value="advantage">Vantagem</SelectItem>
+                            <SelectItem value="disadvantage">Desvantagem</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </label>
                     </div>
                     {hasGuideChanges && (
@@ -2287,18 +2345,22 @@ function Banco() {
           )}
           <label className="space-y-1 text-sm font-medium" data-tutorial="bank-matchup-score">
             Vantagem / Desvantagem (-5 a +5)
-            <select
-              className="h-16 w-full rounded-md border border-input bg-surface px-2 text-sm"
-              value={matchupScore}
-              onChange={(event) => setMatchupScore(Number(event.target.value))}
+            <Select
+              value={String(matchupScore)}
+              onValueChange={(value) => setMatchupScore(Number(value))}
             >
-              {[5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5].map((score) => (
-                <option key={score} value={score}>
-                  {score > 0 ? `+${score} | ` : score < 0 ? `${score} | ` : "0 | "}
-                  {MATCHUP_SCORE_LABELS[score]}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="h-16 bg-surface">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5].map((score) => (
+                  <SelectItem key={score} value={String(score)}>
+                    {score > 0 ? `+${score} | ` : score < 0 ? `${score} | ` : "0 | "}
+                    {MATCHUP_SCORE_LABELS[score]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <label className="space-y-1 text-sm font-medium">
             Justificativa

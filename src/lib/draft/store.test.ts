@@ -157,6 +157,8 @@ describe("map brawler recommendations", () => {
     const map = customized.maps.find((candidate) => candidate.id === "double_swoosh")!;
     expect(map.goodBrawlers).toContain("shelly");
     expect(map.goodBrawlers).not.toContain("colt");
+    expect(map.brawlerTiers?.["shelly"]).toBe("best");
+    expect(map.brawlerTiers?.["colt"]).toBe("worst");
   });
 
   it("uses guide mode recommendations and sanitizes custom mode lists", () => {
@@ -168,6 +170,22 @@ describe("map brawler recommendations", () => {
         unknown_mode: ["bull"],
       }),
     ).toEqual({ gem_grab: ["shelly"] });
+  });
+
+  it("includes custom mode recommendations in the dataset, including empty overrides", () => {
+    const customized = buildDataset([], {}, [], {}, {}, {}, { gem_grab: ["shelly"], heist: [] });
+    const defaults = buildDataset([]);
+
+    expect(customized.modes.find((mode) => mode.id === "gem_grab")?.recommendedBrawlers).toEqual([
+      "shelly",
+    ]);
+    expect(customized.modes.find((mode) => mode.id === "heist")?.recommendedBrawlers).toEqual([]);
+    expect(
+      customized.modes.find((mode) => mode.id === "bounty")?.recommendedBrawlers,
+    ).toEqual(getDefaultModeBrawlers("bounty"));
+    expect(defaults.modes.find((mode) => mode.id === "bounty")?.recommendedBrawlers).toEqual(
+      getDefaultModeBrawlers("bounty"),
+    );
   });
 
   it("uses guide tier defaults and applies custom META tier overrides", () => {

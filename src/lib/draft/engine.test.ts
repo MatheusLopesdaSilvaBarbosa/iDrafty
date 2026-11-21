@@ -21,6 +21,7 @@ import {
   scoreCandidate,
 } from "@/lib/draft/engine";
 import { guideMatchupKey, type Dataset, type DraftState, type Matchup } from "@/lib/draft/types";
+import { buildDataset } from "@/lib/draft/store";
 
 const sampleMatchup: Matchup = {
   attacker: "shelly",
@@ -185,23 +186,18 @@ describe("draft recommendation engine", () => {
     expect(Object.values(GUIDE_BY_BRAWLER_ID).filter((entry) => entry.subMeta)).toHaveLength(11);
   });
 
-  it("applies the requested worst-map penalty to artillery brawlers except Tick and Sprout", () => {
-    const worstMaps = [
-      "bridge_too_far",
-      "safe_zone",
-      "kaboom_canyon",
-      "shooting_star",
-      "ring_of_fire",
-      "out_in_the_open",
-    ];
-    for (const id of ["barley", "dynamike", "grom", "larry-lawrie", "juju", "meeple"]) {
-      expect(GUIDE_BY_BRAWLER_ID[id]?.worstMaps).toEqual(worstMaps);
+  it("keeps Ring of Fire neutral for artillery while retaining their other map penalties", () => {
+    for (const id of ["barley", "dynamike", "grom"]) {
+      expect(GUIDE_BY_BRAWLER_ID[id]?.worstMaps).not.toContain("ring_of_fire");
     }
+    expect(GUIDE_BY_BRAWLER_ID["larry-lawrie"]?.worstMaps ?? []).not.toContain("ring_of_fire");
     expect(GUIDE_BY_BRAWLER_ID["tick"]?.worstMaps).toEqual([]);
     expect(GUIDE_BY_BRAWLER_ID["sprout"]?.worstMaps).toEqual([]);
 
     const result = scoreCandidate(ds, "barley", { ...emptyDraft, mapId: "safe_zone" });
-    expect(result.strategicPoints).toBe(-2);
+    expect(result.strategicPoints).toBe(
+      GUIDE_SCORING_RULES.worstMap + GUIDE_SCORING_RULES.lastPickWarning,
+    );
     expect(result.strategicReasons).toContain("Mapa desfavorável: Safe Zone");
     expect(result.risks).toContain("Mapa desfavorável: Safe Zone");
   });
@@ -254,6 +250,81 @@ describe("draft recommendation engine", () => {
     expect(mapFit(max, bridgeTooFar)).toEqual({ value: 0.4, known: true, specific: false });
   });
 
+  it("applies explicit best, neutral, and worst map tiers to draft scores", () => {
+    const map = MAPS.find((candidate) => candidate.id === "double_swoosh")!;
+    const brawler = BRAWLERS.find((candidate) => candidate.id === "amber")!;
+    const draft = { ...emptyDraft, mapId: map.id };
+    const withTier = (tier: "best" | "neutral" | "worst"): Dataset => ({
+      ...ds,
+      maps: ds.maps.map((candidate) =>
+        candidate.id === map.id
+          ? { ...candidate, brawlerTiers: { amber: tier } }
+          : candidate,
+      ),
+    });
+
+    expect(mapFit(brawler, { ...map, brawlerTiers: { amber: "best" } })).toMatchObject({
+      value: 1,
+      known: true,
+      specific: true,
+    });
+    expect(mapFit(brawler, { ...map, brawlerTiers: { amber: "neutral" } })).toMatchObject({
+      value: 0.4,
+      known: true,
+      specific: false,
+    });
+    expect(mapFit(brawler, { ...map, brawlerTiers: { amber: "worst" } })).toMatchObject({
+      value: 0.1,
+      known: true,
+      specific: false,
+    });
+
+    const best = scoreCandidate(withTier("best"), "amber", draft);
+    const neutral = scoreCandidate(withTier("neutral"), "amber", draft);
+    const worst = scoreCandidate(withTier("worst"), "amber", draft);
+    expect(best.mapValue).toBe(1);
+    expect(neutral.mapValue).toBe(0.4);
+    expect(worst.mapValue).toBe(0.1);
+    expect(best.strategicReasons).toContain("Destaque no mapa Double Swoosh");
+    expect(neutral.strategicReasons).not.toContain("Destaque no mapa Double Swoosh");
+    expect(worst.strategicReasons).toContain("Mapa desfavorável: Double Swoosh");
+    expect(best.score).toBeGreaterThan(neutral.score);
+    expect(neutral.score).toBeGreaterThan(worst.score);
+  });
+
+  it("uses custom mode recommendations instead of guide defaults when scoring", () => {
+    const max = BRAWLERS.find((brawler) => brawler.id === "max")!;
+    const customizedDataset: Dataset = {
+      ...ds,
+      modes: MODES.map((mode) =>
+        mode.id === "bounty" ? { ...mode, recommendedBrawlers: ["max"] } : mode,
+      ),
+    };
+    const draft: DraftState = { ...emptyDraft, mode: "bounty" };
+
+    expect(modeFit(max, "bounty", [])).toEqual({ value: 0.4, known: true });
+    expect(modeFit(max, "bounty", ["max"])).toEqual({ value: 1, known: true });
+    const maxResult = scoreCandidate(customizedDataset, "max", draft);
+    const shellyResult = scoreCandidate(customizedDataset, "shelly", draft);
+    expect(maxResult.components.fit).toBe(0.75);
+    expect(maxResult.strategicReasons).toContain("Modo de destaque");
+    expect(shellyResult.components.fit).toBe(0.45);
+    expect(shellyResult.strategicReasons).not.toContain("Modo de destaque");
+  });
+
+  it("applies recommendations saved in the mode bank to live draft scores", () => {
+    const customizedDataset = buildDataset([], {}, [], {}, {}, {}, { bounty: ["shelly"] });
+    const draft: DraftState = { ...emptyDraft, mode: "bounty" };
+    const recommended = scoreCandidate(customizedDataset, "shelly", draft);
+    const unlisted = scoreCandidate(customizedDataset, "max", draft);
+
+    expect(recommended.components.fit).toBe(0.75);
+    expect(unlisted.components.fit).toBe(0.45);
+    expect(recommended.strategicReasons).toContain("Modo de destaque");
+    expect(unlisted.strategicReasons).not.toContain("Modo de destaque");
+    expect(recommended.score).toBeGreaterThan(unlisted.score);
+  });
+
   it("scores Max higher in Bounty than Heist based on the guide's bestModes", () => {
     const heist = scoreCandidate(ds, "max", {
       ...emptyDraft,
@@ -279,6 +350,20 @@ describe("draft recommendation engine", () => {
     expect(result.positives).toContain("Bom no modo de jogo");
     expect(result.positives).not.toContain("Modo de destaque");
     expect(result.strategicReasons).toContain("Modo de destaque");
+  });
+
+  it("awards the support bonus only until the team picks its first support", () => {
+    const firstSupport = scoreCandidate(ds, "8-bit", emptyDraft);
+    const afterSupportPicked = scoreCandidate(ds, "8-bit", {
+      ...emptyDraft,
+      allies: ["byron", null, null],
+    });
+
+    expect(firstSupport.strategicReasons).toContain("Suporte à equipe");
+    expect(afterSupportPicked.strategicReasons).not.toContain("Suporte à equipe");
+    expect(firstSupport.strategicPoints - afterSupportPicked.strategicPoints).toBe(
+      GUIDE_SCORING_RULES.support,
+    );
   });
 
   it("applies the guide hard-counter penalty and displays a draft warning", () => {
